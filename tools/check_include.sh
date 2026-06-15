@@ -1,0 +1,1 @@
+gcc -H -E check_include.c $(pkg-config --cflags libdrm_amdgpu)  2>&1 > /dev/null
