@@ -5,16 +5,15 @@
 #include <amdgpu.h>
 #include <drm/amdgpu_drm.h>
 
-struct buf {
+struct buffer_view {
     amdgpu_bo_handle bo;
     amdgpu_va_handle va_handle;
     void            *cpu;
     uint64_t         gpu_va;
 };
-
-static struct buf make_buf(amdgpu_device_handle dev, uint64_t size)
+static struct buffer_view make_buffer_view(amdgpu_device_handle dev, uint64_t size)
 {
-    struct buf b = {0};
+    struct buffer_view b = {0};
     struct amdgpu_bo_alloc_request req = {0};
     req.alloc_size = size;
     req.phys_alignment = 4096;
@@ -53,7 +52,7 @@ int main(void)
     // alloc bo on device: dev , with request: req, result in handle bo 
     amdgpu_bo_handle bo;
     amdgpu_bo_alloc(dev, &req, &bo);
-    //allow cpu to read/write this object buffer
+    //allow cpu to read/write this object buffer_viewfer
     void *cpu;
     amdgpu_bo_cpu_map(bo, &cpu);
 
@@ -61,9 +60,9 @@ int main(void)
     for(int i = 0 ; i < 4096 ;i++) ((uint8_t*)cpu)[i] = (uint8_t)(i*7 + 3);
     printf("[2] read previous 4 bytes:  %02x %02x %02x %02x\n",
     ((uint8_t*)cpu)[0] , ((uint8_t*)cpu)[1] , ((uint8_t*)cpu)[2] , ((uint8_t*)cpu)[3]);
-    struct buf src = make_buf(dev , 4096);
-    struct buf dst = make_buf(dev , 4096);
-    struct buf ib  = make_buf(dev , 4096);
+    struct buffer_view src = make_buffer_view(dev , 4096);
+    struct buffer_view dst = make_buffer_view(dev , 4096);
+    struct buffer_view ib  = make_buffer_view(dev , 4096);
 
     for(int i = 0 ; i < 4096;i++) ((uint8_t*)src.cpu)[i] = (uint8_t)(i*7 + 3);
     memset(dst.cpu , 0, 4096);
@@ -127,7 +126,6 @@ int main(void)
     printf("[4.4b] wait=%d expired=%u | dst[0..3]=%02x %02x %02x %02x | %s\n",
        r_wait, expired,
        ((uint8_t*)dst.cpu)[0],((uint8_t*)dst.cpu)[1],
-       ((uint8_t*)dst.cpu)[2],((uint8_t*)dst.cpu)[3],
-       ok ? "COPY OK" : "MISMATCH");
+       ((uint8_t*)dst.cpu)[2],((uint8_t*)dst.cpu)[3], ok ? "COPY OK" : "MISMATCH");
     return 0;
 }
